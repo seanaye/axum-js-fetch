@@ -1,7 +1,4 @@
-use axum::{
-    body::HttpBody,
-    response::IntoResponse,
-};
+use axum::{body::HttpBody, response::IntoResponse};
 use bytes::{buf::Buf, Bytes};
 use futures_lite::stream::{Stream, StreamExt};
 use http::Request;
@@ -195,19 +192,23 @@ impl App {
 
 #[cfg(test)]
 pub mod tests {
-    use axum::{ routing::{ post, get }, Router, extract::{ Json, Query }, body::StreamBody };
-    use futures_lite::{Stream, stream};
-    use std::{collections::HashMap, convert::Infallible};
-    use serde::Deserialize;
     use crate::App;
+    use axum::{
+        body::StreamBody,
+        extract::{Json, Query},
+        routing::get,
+        Router,
+    };
+    use futures_lite::{stream, Stream};
+    use serde::Deserialize;
+    use std::{collections::HashMap, convert::Infallible};
 
     struct MyApp(App);
 
     impl Default for MyApp {
         fn default() -> Self {
             let app = Router::new()
-                .route("/", get(handler))
-                .route("/", post(handler2))
+                .route("/", get(handler).post(handler2))
                 .route("/stream", get(handler3));
             Self(App::new(app))
         }
@@ -234,5 +235,4 @@ pub mod tests {
         let stream = stream::iter(chunks);
         StreamBody::new(stream)
     }
-
 }

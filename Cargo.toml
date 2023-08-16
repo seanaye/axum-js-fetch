@@ -3,10 +3,6 @@ name = "axum-js-fetch"
 version = "0.1.0"
 edition = "2021"
 
-
-[lib]
-crate_type = ["cdylib"]
-
 [profile.release]
 codegen-units = 1
 incremental = true
