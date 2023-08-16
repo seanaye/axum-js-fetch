@@ -2,13 +2,10 @@
 name = "axum-js-fetch"
 version = "0.1.0"
 edition = "2021"
+description = "Axum integration for the javascript Fetch API"
+repository = "https://github.com/seanaye/axum-js-fetch"
+readme = "./README.md"
 
-[profile.release]
-codegen-units = 1
-incremental = true
-lto = true
-opt-level = 3
- 
 [dependencies]
 axum = { version = "0.6", default-features = false }
 tower = { version = "0.4.13", features = ["util"] }
