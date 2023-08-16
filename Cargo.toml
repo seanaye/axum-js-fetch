@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 description = "Axum integration for the javascript Fetch API"
 repository = "https://github.com/seanaye/axum-js-fetch"
-readme = "./README.md"
+readme = "README.md"
 
 [dependencies]
 axum = { version = "0.6", default-features = false }
