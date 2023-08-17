@@ -2,9 +2,8 @@ use axum::{body::HttpBody, response::IntoResponse};
 use bytes::{buf::Buf, Bytes};
 use futures_lite::stream::{Stream, StreamExt};
 use http::Request;
-use http_body::combinators::BoxBody;
 use js_sys::Uint8Array;
-use std::{error::Error, pin::Pin, task::Poll};
+use std::{error::Error, pin::Pin, task::Poll, sync::{Mutex, Arc}};
 use tower::{util::BoxCloneService, BoxError, ServiceBuilder, ServiceExt};
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::spawn_local;
@@ -74,43 +73,35 @@ enum Err {
     ConvertError,
 }
 
-fn to_http_body(req: gloo_net::http::Request) -> OssiBody {
-    let (tx, rx) = async_channel::unbounded::<Bytes>();
+fn to_http_body(req: gloo_net::http::Request) -> axum::body::Body {
+    let (sender, body) = axum::body::Body::channel();
+    let arc_sender = Arc::new(Mutex::new(sender));
 
-    match req.body() {
-        Some(b) => {
-            spawn_local(async move {
-                let _ = ReadableStream::from_raw(b.unchecked_into())
-                    .into_stream()
-                    .try_for_each(|buf_js| -> Result<(), Err> {
-                        let buffer =
-                            js_sys::Uint8Array::new(&buf_js.map_err(|_| Err::ConvertError)?);
-                        let bytes: Bytes = buffer.to_vec().into();
-                        let tx = tx.clone();
-
-                        // dont block on sending bytes into stream
-                        spawn_local(async move {
-                            let _ = tx.send(bytes).await;
-                        });
-                        Ok(())
-                    })
-                    .await;
-            });
-        }
-        None => {
-            tx.close();
-        }
+    if let Some(b) = req.body() {
+        spawn_local(async move {
+            let _ = ReadableStream::from_raw(b.unchecked_into())
+                .into_stream()
+                .try_for_each(|buf_js| -> Result<(), Err> {
+                    let buffer =
+                        js_sys::Uint8Array::new(&buf_js.map_err(|_| Err::ConvertError)?);
+                    let bytes: Bytes = buffer.to_vec().into();
+                
+                    let sender = Arc::clone(&arc_sender);
+                    // dont block on sending bytes into stream
+                    spawn_local(async move {
+                        let mut sender = sender.lock().unwrap();
+                        sender.send_data(bytes).await.unwrap();
+                    });
+                    Ok(())
+                })
+                .await;
+        });
     }
 
-    let streaming_body = StreamingBody { stream: rx };
-    BoxBody::new(streaming_body)
+    body
 }
 
-type OssiBody = BoxBody<Bytes, BoxError>;
-
-type OssiRequest = Request<OssiBody>;
-
-fn to_ossi_request(req: web_sys::Request) -> OssiRequest {
+fn from_fetch_request(req: web_sys::Request) -> Request<axum::body::Body> {
     let gloo_req = gloo_net::http::Request::from(req);
     let headers = gloo_req.headers();
 
@@ -133,7 +124,7 @@ fn create_default_error(e: impl Error) -> gloo_net::http::Response {
         .unwrap()
 }
 
-fn to_ossi_response(res: impl IntoResponse) -> web_sys::Response {
+fn to_fetch_response(res: impl IntoResponse) -> web_sys::Response {
     let (parts, body) = res.into_response().into_parts();
     let headers = gloo_net::http::Headers::new();
     for (key, value) in parts.headers.iter() {
@@ -170,14 +161,14 @@ pub struct App {
 impl App {
     pub fn new<S>(service: S) -> Self
     where
-        S: ServiceExt<OssiRequest> + Clone + Send + Sized + 'static,
+        S: ServiceExt<Request<axum::body::Body>> + Clone + Send + Sized + 'static,
         S::Future: Send + 'static,
         S::Response: IntoResponse,
         S::Error: Into<Box<dyn Error + Send + Sync>>,
     {
         let svc = ServiceBuilder::new()
-            .map_request(to_ossi_request)
-            .map_response(to_ossi_response)
+            .map_request(from_fetch_request)
+            .map_response(to_fetch_response)
             .service(service)
             .map_err(|e| e.into());
 
