@@ -79,22 +79,24 @@ fn to_http_body(req: gloo_net::http::Request) -> axum::body::Body {
 
     if let Some(b) = req.body() {
         spawn_local(async move {
-            let _ = ReadableStream::from_raw(b.unchecked_into())
+            let sender_clone = Arc::clone(&arc_sender);
+            ReadableStream::from_raw(b.unchecked_into())
                 .into_stream()
                 .try_for_each(|buf_js| -> Result<(), Err> {
                     let buffer =
                         js_sys::Uint8Array::new(&buf_js.map_err(|_| Err::ConvertError)?);
                     let bytes: Bytes = buffer.to_vec().into();
                 
-                    let sender = Arc::clone(&arc_sender);
+                    let sender_clone = Arc::clone(&sender_clone);
                     // dont block on sending bytes into stream
                     spawn_local(async move {
-                        let mut sender = sender.lock().unwrap();
-                        sender.send_data(bytes).await.unwrap();
+                        let binding = Arc::clone(&sender_clone);
+                        let mut sender = binding.lock().unwrap();
+                        let _ = sender.send_data(bytes).await;
                     });
                     Ok(())
                 })
-                .await;
+                .await.unwrap();
         });
     }
 

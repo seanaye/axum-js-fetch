@@ -1,6 +1,6 @@
 [package]
 name = "axum-js-fetch"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2021"
 description = "Axum integration for the javascript Fetch API"
 repository = "https://github.com/seanaye/axum-js-fetch"
