@@ -18,7 +18,7 @@ wasm-bindgen-futures = { version = "0.4.37", features = ["futures-core-03-stream
 js-sys = "0.3.64"
 futures-lite = "1.13.0"
 wasm-streams = "0.3.0"
-bytes = "1.4.0"
+bytes = "1.5.0"
 http-body = "0.4.5"
 async-channel = "1.9.0"
 
