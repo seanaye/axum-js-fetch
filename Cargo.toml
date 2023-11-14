@@ -10,7 +10,7 @@ license = "MIT"
 [dependencies]
 axum = { version = "0.6", default-features = false }
 tower = { version = "0.4.13", features = ["util"] }
-http = "0.2.9"
+http = "0.2.11"
 web-sys = { version = "0.3.64", features = ["Request", "Response"] }
 gloo-net = "0.4.0"
 wasm-bindgen = "0.2.87"
