@@ -20,7 +20,7 @@ futures-lite = "1.13.0"
 wasm-streams = "0.3.0"
 bytes = "1.4.0"
 http-body = "0.4.5"
-async-channel = "1.9.0"
+async-channel = "2.1.1"
 
 [dev-dependencies]
 serde = { version = "1.0", features = ["derive"] }
