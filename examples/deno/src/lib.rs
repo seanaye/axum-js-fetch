@@ -31,7 +31,7 @@ impl MyApp {
 
     #[wasm_bindgen]
     pub async fn serve(&self, req: web_sys::Request) -> web_sys::Response {
-        self.0.serve(req).await
+        self.0.oneshot(req).await
     }
 }
 
