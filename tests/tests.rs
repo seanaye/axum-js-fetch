@@ -1,4 +1,10 @@
-use axum::{body::Body, extract::Path, response::IntoResponse, routing::{get, post}, Router};
+use axum::{
+    body::Body,
+    extract::Path,
+    response::IntoResponse,
+    routing::{get, post},
+    Router,
+};
 use axum_js_fetch::App;
 use futures_lite::stream;
 use std::convert::Infallible;
@@ -12,7 +18,7 @@ impl Default for MyApp {
     fn default() -> Self {
         let app = Router::new()
             .route("/", get(handler))
-            .route("/count/:i",post(count));
+            .route("/count/:i", post(count));
         Self(App::new(app))
     }
 }
@@ -30,9 +36,9 @@ impl MyApp {
     pub async fn oneshot(&self, req: web_sys::Request) -> web_sys::Response {
         self.0.oneshot(req).await
     }
-    
+
     #[wasm_bindgen]
-    pub async fn serve(&self, ) -> () {
+    pub async fn serve(&self) -> () {
         todo!()
     }
 }
@@ -64,30 +70,3 @@ async fn oneshot() {
         "Hello world.".to_string()
     )
 }
-
-/* 
-#[wasm_bindgen_test]
-async fn serve() {
-    let (tx,rx) = async_channel::unbounded();
-    
-    spawn_local(async move {
-        let resp_stream = MyApp::new()
-            .serve(
-                // what to put here?
-            )
-            .await;
-        while Some(resp) = resp_stream.next() {
-            tx.send(Ok(resp))
-        }
-    });
-    spawn_local(async move {
-        for i in 0..10 {
-            // post i to the server under url count/{i}
-        }
-        // close server
-    });
-    let mut i = 0;
-    while Ok(msg) = rx.recv() {
-        assert_eq!(JsFuture::form(msg).await.unwrap(),i+1);
-    }
-}*/

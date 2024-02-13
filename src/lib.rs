@@ -1,12 +1,11 @@
-use async_channel::Sender;
 use axum::{body::HttpBody, response::IntoResponse};
 use bytes::{buf::Buf, Bytes};
-use futures_lite::{pin, stream::{Stream, StreamExt}};
+use futures_lite::stream::{Stream, StreamExt};
 use http::Request;
 use http_body::Frame;
 use js_sys::Uint8Array;
 use std::{convert::Infallible, error::Error, pin::Pin, sync::Arc, task::Poll};
-use tower::{util::{BoxCloneService, CallAll}, BoxError, ServiceBuilder, ServiceExt};
+use tower::{util::BoxCloneService, BoxError, ServiceBuilder, ServiceExt};
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::spawn_local;
 use wasm_streams::ReadableStream;
@@ -168,25 +167,4 @@ impl App {
     pub async fn oneshot(&self, req: web_sys::Request) -> web_sys::Response {
         self.service.clone().oneshot(req).await.unwrap()
     }
-
-    /* 
-        pub async fn call_all<SI>(&self, stream_in:SI, tx:Sender<web_sys::Response>)  // stream out
-    where
-        SI: Stream<Item = web_sys::Request>,{
-            pin!(stream_in);
-            while let Some(resp) = 
-            self.service.clone().call_all(stream_in).next().await {
-                tx.send(resp.unwrap());
-            }
-        }*/
-    
-
-    // TODO
-    /*
-    pub async fn serve(&self, ?) -> ? {
-        Listen for a stream of web_sys::Requests and return a stream of web_sys::Responses
-        recreating the server functionality in a wasm environment.
-    }
-    */
 }
-
