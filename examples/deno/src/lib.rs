@@ -1,5 +1,5 @@
 use axum::{
-    body::StreamBody,
+    body::Body,
     extract::{Json, Query},
     routing::get,
     Router,
@@ -31,7 +31,7 @@ impl MyApp {
 
     #[wasm_bindgen]
     pub async fn serve(&self, req: web_sys::Request) -> web_sys::Response {
-        self.0.serve(req).await
+        self.0.oneshot(req).await
     }
 }
 
@@ -46,13 +46,14 @@ struct TestStruct {
 
 async fn handler2(
     Json(payload): Json<TestStruct>,
-) -> StreamBody<impl Stream<Item = Result<String, Infallible>>> {
-    let stream = stream::repeat(Ok(payload.hello));
-    StreamBody::new(stream)
+) -> Body {
+    let stream: futures_lite::stream::Repeat<Result<String, Infallible>> = stream::repeat(Ok(payload.hello));
+    Body::from_stream(stream)
 }
 
-async fn handler3() -> StreamBody<impl Stream<Item = std::io::Result<&'static str>>> {
-    let chunks = vec![Ok("Hello,"), Ok(" "), Ok("world!")];
+async fn handler3() -> Body {
+    let chunks : Vec<Result<&'static str, Infallible>> = vec![Ok("Hello,"), Ok(" "), Ok("world!")];
     let stream = stream::iter(chunks);
-    StreamBody::new(stream)
+    Body::from_stream(stream)
 }
+
